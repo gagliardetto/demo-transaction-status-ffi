@@ -27,18 +27,21 @@ pub extern "C" fn parse_instruction(bytes: *const u8, len: usize) -> Response {
         slice::from_raw_parts(bytes, len)
     };
     let bytes = bytes.to_vec();
-    println!("params raw bytes: {:?}", bytes);
+    println!("[rust] params raw bytes: {:?}", bytes);
     let mut decoder = Decoder::new(bytes);
     {
         // read program ID:
         let program_id_bytes = decoder.read_bytes(32).unwrap();
         let program_id = solana_sdk::pubkey::Pubkey::new(&program_id_bytes);
-        println!("program_id: {:?}", program_id,);
-        let instruction = CompiledInstruction {
+        println!("[rust] program_id: {:?}", program_id,);
+        let mut instruction = CompiledInstruction {
             program_id_index: 0,
             accounts: vec![],
             data: vec![],
         };
+        {
+            instruction.program_id_index = decoder.read_u8().unwrap() as u8;
+        }
         let account_keys = AccountKeys::new(&[], None);
         let stack_height: Option<u32> = None;
         let parsed = parse(

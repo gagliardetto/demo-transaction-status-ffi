@@ -14,6 +14,7 @@ import (
 	"bytes"
 	crand "crypto/rand"
 	"crypto/sha256"
+	"encoding/binary"
 	"encoding/hex"
 	"fmt"
 	"io"
@@ -23,6 +24,7 @@ import (
 
 	"github.com/davecgh/go-spew/spew"
 	bin "github.com/gagliardetto/binary"
+	"github.com/gagliardetto/solana-go"
 )
 
 func randomBytes(len int) []byte {
@@ -47,7 +49,147 @@ func main() {
 	{
 		buf := new(bytes.Buffer)
 		instructionParams := bin.NewBinEncoder(buf)
-		instructionParams.Write(randomBytes(32))
+		{
+			// .program_id:
+			programId := randomBytes(32)
+			_, err := instructionParams.Write(programId)
+			if err != nil {
+				panic(err)
+			}
+			fmt.Println("[golang] programId:", solana.PublicKeyFromBytes(programId).String())
+			// .compiled_instruction:
+			{
+				{
+					// .compiled_instruction.program_id_index as uint8
+					program_id_index := uint8(1)
+					err := instructionParams.WriteUint8(program_id_index)
+					if err != nil {
+						panic(err)
+					}
+					// .compiled_instruction.accounts:
+					accounts := []uint8{1, 2, 3}
+					{
+						// len uint8
+						err = instructionParams.WriteUint8(uint8(len(accounts)))
+						if err != nil {
+							panic(err)
+						}
+						// values:
+						for _, accountIndex := range accounts {
+							err = instructionParams.WriteUint8(accountIndex)
+							if err != nil {
+								panic(err)
+							}
+						}
+					}
+					// .compiled_instruction.data:
+					data := []byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 10}
+					{
+						// len uint16
+						err = instructionParams.WriteUint16(uint16(len(data)), binary.LittleEndian)
+						if err != nil {
+							panic(err)
+						}
+						// value:
+						_, err = instructionParams.Write(data)
+						if err != nil {
+							panic(err)
+						}
+					}
+				}
+			}
+			{
+				// .account_keys:
+				{
+					// account_keys.static_keys:
+					{
+						staticKeys := []solana.PublicKey{
+							solana.TokenLendingProgramID,
+							solana.PublicKeyFromBytes(randomBytes(32)),
+							solana.PublicKeyFromBytes(randomBytes(32)),
+						}
+						{
+							// len uint8
+							err := instructionParams.WriteUint8(uint8(len(staticKeys)))
+							if err != nil {
+								panic(err)
+							}
+							// keys:
+							for _, key := range staticKeys {
+								// key
+								_, err := instructionParams.Write(key[:])
+								if err != nil {
+									panic(err)
+								}
+							}
+						}
+					}
+					// account_keys.dynamic_keys:
+					{
+						// account_keys.dynamic_keys.writable:
+						writable := []solana.PublicKey{
+							solana.PublicKeyFromBytes(randomBytes(32)),
+							solana.PublicKeyFromBytes(randomBytes(32)),
+							solana.PublicKeyFromBytes(randomBytes(32)),
+							solana.PublicKeyFromBytes(randomBytes(32)),
+						}
+						{
+							// len uint8
+							err := instructionParams.WriteUint8(uint8(len(writable)))
+							if err != nil {
+								panic(err)
+							}
+							// keys:
+							for _, key := range writable {
+								_, err := instructionParams.Write(key[:])
+								if err != nil {
+									panic(err)
+								}
+							}
+						}
+						// account_keys.dynamic_keys.readonly:
+						readonly := []solana.PublicKey{
+							solana.PublicKeyFromBytes(randomBytes(32)),
+						}
+						{
+							// len uint8
+							err := instructionParams.WriteUint8(uint8(len(readonly)))
+							if err != nil {
+								panic(err)
+							}
+							// keys:
+							for _, key := range readonly {
+								_, err := instructionParams.Write(key[:])
+								if err != nil {
+									panic(err)
+								}
+							}
+						}
+
+					}
+				}
+			}
+			// stack_height:
+			{
+				has := true
+				stackHeight := uint32(123)
+				if has {
+					err := instructionParams.WriteOption(true)
+					if err != nil {
+						panic(err)
+					}
+					err = instructionParams.WriteUint32(stackHeight, binary.LittleEndian)
+					if err != nil {
+						panic(err)
+					}
+				} else {
+					err := instructionParams.WriteOption(false)
+					if err != nil {
+						panic(err)
+					}
+				}
+			}
+		}
 		fmt.Println("[golang] sending instruction:", buf.Bytes())
 		cs := (*C.u_char)(C.CBytes(buf.Bytes()))
 		defer C.free(unsafe.Pointer(cs))
