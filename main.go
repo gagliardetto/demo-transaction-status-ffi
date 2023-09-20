@@ -4,6 +4,7 @@ package main
 // The -ldl is necessary to fix the linker errors about `dlsym` that would otherwise appear.
 
 /*
+#cgo LDFLAGS: -L./lib -lsolana_transaction_status_wrapper
 #cgo LDFLAGS: ./lib/libsolana_transaction_status_wrapper.a -ldl
 #include "./lib/transaction_status.h"
 */
