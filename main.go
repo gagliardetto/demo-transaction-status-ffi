@@ -5,7 +5,6 @@ package main
 
 /*
 #cgo LDFLAGS: -L./lib -lsolana_transaction_status_wrapper
-#cgo LDFLAGS: ./lib/libsolana_transaction_status_wrapper.a -ldl
 #include "./lib/transaction_status.h"
 */
 import "C"
