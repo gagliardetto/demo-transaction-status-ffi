@@ -30,6 +30,7 @@ pub extern "C" fn parse_instruction(bytes: *const u8, len: usize) -> Response {
     };
     let bytes = bytes.to_vec();
     println!("[rust] params raw bytes: {:?}", bytes);
+    println!("[rust] params:");
     let mut decoder = Decoder::new(bytes);
     {
         // read program ID:
@@ -163,11 +164,11 @@ pub extern "C" fn parse_instruction(bytes: *const u8, len: usize) -> Response {
                 status: 1,
             };
         } else {
-            println!("[rust] parse success: {:?}", parsed);
+            println!("[rust] successfully parsed the instruction: {:?}", parsed);
             let parsed = parsed.unwrap();
             let parsed_json = serde_json::to_vec(&parsed).unwrap();
             let parsed_json_str = String::from_utf8(parsed_json.clone()).unwrap();
-            println!("[rust] parsed_json: {}", parsed_json_str);
+            println!("[rust] parsed instruction as json: {}", parsed_json_str);
 
             let mut response = vec![0; 32];
             response.extend_from_slice(&parsed_json);

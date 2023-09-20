@@ -251,11 +251,15 @@ func main() {
 		defer C.free(unsafe.Pointer(cs))
 
 		got := C.parse_instruction(cs, C.ulong(len(buf.Bytes())))
-		fmt.Println("[golang] got status:", got.status)
+		if got.status == 0 {
+			fmt.Println("[golang] got status (OK):", got.status)
+		} else {
+			fmt.Println("[golang] got status (ERR):", got.status)
+		}
 
 		parsedInstructionJSON := C.GoBytes(unsafe.Pointer(got.buf.data), C.int(got.buf.len))
-		fmt.Println("[golang] got back:", spew.Sdump(parsedInstructionJSON))
-		fmt.Println("[golang] got back:", string(parsedInstructionJSON))
+		fmt.Println("[golang] got parsed instruction as json:", spew.Sdump(parsedInstructionJSON))
+		fmt.Println("[golang] got parsed instruction as json:", string(parsedInstructionJSON))
 		{
 			var dst any
 			err := json.Unmarshal(parsedInstructionJSON, &dst)
