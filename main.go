@@ -16,6 +16,7 @@ import (
 	"crypto/sha256"
 	"encoding/binary"
 	"encoding/hex"
+	"encoding/json"
 	"fmt"
 	"io"
 	"os"
@@ -25,6 +26,7 @@ import (
 	"github.com/davecgh/go-spew/spew"
 	bin "github.com/gagliardetto/binary"
 	"github.com/gagliardetto/solana-go"
+	"github.com/mr-tron/base58/base58"
 )
 
 func randomBytes(len int) []byte {
@@ -214,30 +216,34 @@ func main() {
 	{
 		buf := new(bytes.Buffer)
 		instructionParams := bin.NewBinEncoder(buf)
+		data, err := base58.Decode("Fk63PRyGqZAwDVvZPKBn2ZUTURZRgny7KaLrZEaea2N6u7orpV3UUGet4jCzvtuVpr1TUmDgi7AsEgQE4VjahYaZ5HtxwnoVq4SSxK65SatJYkW4AQEfT7peCRRHbEXTGPegaSRjxMYDguks8kyEHbgWfB1H3m")
+		if err != nil {
+			panic(err)
+		}
 		demoInstruction := Parameters{
 			ProgramID: solana.MPK("11111111111111111111111111111111"),
 			Instruction: CompiledInstruction{
-				ProgramIDIndex: 0,
-				Accounts:       []uint8{0, 1, 2},
-				Data:           []byte{0, 1, 2, 3},
+				ProgramIDIndex: 2,
+				Accounts:       []uint8{1, 0},
+				Data:           data,
 			},
 			AccountKeys: AccountKeys{
 				StaticKeys: []solana.PublicKey{
-					solana.TokenLendingProgramID,
+					solana.MPK("6Rp3vYN1L1ym3hz79ZqDHbpAFP8W1eB6ja47se2sDaCx"),
+					solana.MPK("CqZt8CTQfNVH6SYWp1HdWXoBhkFqdT8nEFbSM5bB5hvN"),
+					solana.MPK("Vote111111111111111111111111111111111111111"),
 				},
-				DynamicKeys: &LoadedAddresses{
-					Writable: []solana.PublicKey{
-						solana.BPFLoaderProgramID,
-					},
-					Readonly: []solana.PublicKey{
-						solana.TokenLendingProgramID,
-					},
-				},
+				// DynamicKeys: &LoadedAddresses{
+				// 	Writable: []solana.PublicKey{},
+				// 	Readonly: []solana.PublicKey{
+				// 		solana.TokenLendingProgramID,
+				// 	},
+				// },
 			},
 			StackHeight: nil,
 		}
 		spew.Dump(demoInstruction)
-		err := demoInstruction.MarshalWithEncoder(instructionParams)
+		err = demoInstruction.MarshalWithEncoder(instructionParams)
 		if err != nil {
 			panic(err)
 		}
@@ -249,6 +255,15 @@ func main() {
 
 		parsedInstructionJSON := C.GoBytes(unsafe.Pointer(got.buf.data), C.int(got.buf.len))
 		fmt.Println("[golang] got back:", spew.Sdump(parsedInstructionJSON))
+		fmt.Println("[golang] got back:", string(parsedInstructionJSON))
+		{
+			var dst any
+			err := json.Unmarshal(parsedInstructionJSON, &dst)
+			if err != nil {
+				panic(err)
+			}
+			spew.Dump(dst)
+		}
 	}
 	// // {
 	// // 	got := C.accept_vec(cs, C.ulong(len(origin)))

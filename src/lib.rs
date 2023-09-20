@@ -99,8 +99,19 @@ pub extern "C" fn parse_instruction(bytes: *const u8, len: usize) -> Response {
                 child: None,
             };
         }
-        let mut stuff = &parsed_account_keys.child.unwrap();
-        let account_keys = AccountKeys::new(&parsed_account_keys.parent, Some(stuff));
+        let sommmm = &parsed_account_keys
+            .child
+            .or(Some(LoadedAddresses::default()))
+            .unwrap();
+
+        let account_keys = AccountKeys::new(
+            &parsed_account_keys.parent,
+            if has_dynamic_account_keys {
+                Some(sommmm)
+            } else {
+                None
+            },
+        );
 
         let mut stack_height: Option<u32> = None;
         {
@@ -125,7 +136,7 @@ pub extern "C" fn parse_instruction(bytes: *const u8, len: usize) -> Response {
             "[rust] has_dynamic_account_keys: {:?}",
             has_dynamic_account_keys
         );
-        println!("[rust] account_keys.dynamic: {:?}", stuff);
+        println!("[rust] account_keys.dynamic: {:?}", sommmm);
         println!("[rust] stack_height: {:?}", stack_height);
 
         let parsed = parse(
