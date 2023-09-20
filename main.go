@@ -85,8 +85,8 @@ func main() {
 					// .compiled_instruction.data:
 					data := []byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 10}
 					{
-						// len uint16
-						err = instructionParams.WriteUint16(uint16(len(data)), binary.LittleEndian)
+						// len uint8
+						err = instructionParams.WriteUint8(uint8(len(data)))
 						if err != nil {
 							panic(err)
 						}
@@ -125,6 +125,18 @@ func main() {
 						}
 					}
 					// account_keys.dynamic_keys:
+					hasDynamicKeys := true
+					if hasDynamicKeys {
+						err := instructionParams.WriteOption(true)
+						if err != nil {
+							panic(err)
+						}
+					} else {
+						err := instructionParams.WriteOption(false)
+						if err != nil {
+							panic(err)
+						}
+					}
 					{
 						// account_keys.dynamic_keys.writable:
 						writable := []solana.PublicKey{
