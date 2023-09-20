@@ -63,11 +63,75 @@ pub extern "C" fn parse_instruction(bytes: *const u8, len: usize) -> Response {
             }
         }
 
-        let parsed = parse_accountkeys(decoder).unwrap();
-        let mut stuff = &parsed.child.unwrap();
-        let account_keys = AccountKeys::new(&parsed.parent, Some(stuff));
+        let mut parsed_account_keys = Combined {
+            parent: vec![],
+            child: None,
+        };
+        let static_account_keys_len = decoder.read_u8().unwrap() as usize;
+        println!(
+            "[rust] static_account_keys_len: {:?}",
+            static_account_keys_len
+        );
+        let mut static_account_keys_vec = vec![];
+        for _ in 0..static_account_keys_len {
+            let account_key_bytes = decoder.read_bytes(32).unwrap();
+            let account_key = solana_sdk::pubkey::Pubkey::new(&account_key_bytes);
+            println!("[rust] account_key: {:?}", account_key);
+            static_account_keys_vec.push(account_key);
+        }
+
+        let has_dynamic_account_keys = decoder.read_option().unwrap();
+        println!(
+            "[rust] has_dynamic_account_keys: {:?}",
+            has_dynamic_account_keys
+        );
+        if has_dynamic_account_keys {
+            let mut loaded_addresses = LoadedAddresses::default();
+            let num_writable_accounts = decoder.read_u8().unwrap() as usize;
+            println!("[rust] num_writable_accounts: {:?}", num_writable_accounts);
+            // read 32 bytes for each writable account:
+            for _ in 0..num_writable_accounts {
+                let account_key_bytes = decoder.read_bytes(32).unwrap();
+                let account_key = solana_sdk::pubkey::Pubkey::new(&account_key_bytes);
+                println!("[rust] account_key: {:?}", account_key);
+                loaded_addresses.writable.push(account_key);
+            }
+            let num_readonly_accounts = decoder.read_u8().unwrap() as usize;
+            println!("[rust] num_readonly_accounts: {:?}", num_readonly_accounts);
+            // read 32 bytes for each readonly account:
+            for _ in 0..num_readonly_accounts {
+                let account_key_bytes = decoder.read_bytes(32).unwrap();
+                let account_key = solana_sdk::pubkey::Pubkey::new(&account_key_bytes);
+                println!("[rust] account_key: {:?}", account_key);
+                loaded_addresses.readonly.push(account_key);
+            }
+
+            parsed_account_keys = Combined {
+                parent: static_account_keys_vec,
+                child: Some(loaded_addresses),
+            };
+        } else {
+            parsed_account_keys = Combined {
+                parent: static_account_keys_vec,
+                child: None,
+            };
+        }
+        let mut stuff = &parsed_account_keys.child.unwrap();
+        let account_keys = AccountKeys::new(&parsed_account_keys.parent, Some(stuff));
 
         let mut stack_height: Option<u32> = None;
+        {
+            let has_stack_height = decoder.read_option().unwrap();
+            println!("[rust] has_stack_height: {:?}", has_stack_height);
+            if has_stack_height {
+                stack_height = Some(
+                    decoder
+                        .read_u32(byte_order::ByteOrder::LittleEndian)
+                        .unwrap(),
+                );
+                println!("[rust] stack_height: {:?}", stack_height);
+            }
+        }
         let parsed = parse(
             &program_id, // program_id
             &instruction,

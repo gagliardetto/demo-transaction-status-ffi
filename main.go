@@ -51,12 +51,12 @@ func main() {
 		instructionParams := bin.NewBinEncoder(buf)
 		{
 			// .program_id:
-			programId := randomBytes(32)
-			_, err := instructionParams.Write(programId)
+			program_id := solana.Secp256k1ProgramID
+			_, err := instructionParams.Write(program_id[:])
 			if err != nil {
 				panic(err)
 			}
-			fmt.Println("[golang] programId:", solana.PublicKeyFromBytes(programId).String())
+			fmt.Println("[golang] programId:", program_id.String())
 			// .compiled_instruction:
 			{
 				{
