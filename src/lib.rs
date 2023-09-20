@@ -31,8 +31,8 @@ pub extern "C" fn parse_instruction(bytes: *const u8, len: usize) -> Response {
     let mut decoder = Decoder::new(bytes);
     {
         // read program ID:
-        let program_id_string = decoder.read_bytes(32).unwrap();
-        let program_id = solana_sdk::pubkey::Pubkey::new_rand();
+        let program_id_bytes = decoder.read_bytes(32).unwrap();
+        let program_id = solana_sdk::pubkey::Pubkey::new(&program_id_bytes);
         println!("program_id: {:?}", program_id,);
         let instruction = CompiledInstruction {
             program_id_index: 0,
