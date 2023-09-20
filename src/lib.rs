@@ -2,6 +2,7 @@ use std::ffi::CStr;
 use std::ffi::CString;
 
 use std::slice;
+use std::time::Instant;
 
 mod byte_order;
 mod reader;
@@ -24,6 +25,7 @@ pub extern "C" fn hello_from_rust() {
 
 #[no_mangle]
 pub extern "C" fn parse_instruction(bytes: *const u8, len: usize) -> Response {
+    let started_at = Instant::now();
     let bytes = unsafe {
         assert!(!bytes.is_null());
         slice::from_raw_parts(bytes, len)
@@ -164,17 +166,29 @@ pub extern "C" fn parse_instruction(bytes: *const u8, len: usize) -> Response {
                 status: 1,
             };
         } else {
-            println!("[rust] successfully parsed the instruction: {:?}", parsed);
+            println!(
+                "[rust] successfully parsed the instruction in {:?}: {:?}",
+                Instant::now() - started_at,
+                parsed
+            );
             let parsed = parsed.unwrap();
             let parsed_json = serde_json::to_vec(&parsed).unwrap();
-            let parsed_json_str = String::from_utf8(parsed_json.clone()).unwrap();
-            println!("[rust] parsed instruction as json: {}", parsed_json_str);
+            {
+                let parsed_json_str = String::from_utf8(parsed_json.clone()).unwrap();
+                println!(
+                    "[rust] parsed instruction as json at {:?}: {}",
+                    Instant::now() - started_at,
+                    parsed_json_str
+                );
+            }
 
+            println!("[rust] {:?}", Instant::now() - started_at);
             let mut response = vec![0; 32];
             response.extend_from_slice(&parsed_json);
 
             let data = response.as_mut_ptr();
             let len = response.len();
+            println!("[rust] {:?}", Instant::now() - started_at);
             return Response {
                 buf: Buffer {
                     data: unsafe { data.add(32) },
