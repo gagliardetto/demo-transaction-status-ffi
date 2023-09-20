@@ -21,6 +21,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"time"
 	"unsafe"
 
 	"github.com/davecgh/go-spew/spew"
@@ -250,12 +251,14 @@ func main() {
 		cs := (*C.u_char)(C.CBytes(buf.Bytes()))
 		defer C.free(unsafe.Pointer(cs))
 
+		startedParsingAt := time.Now()
 		got := C.parse_instruction(cs, C.ulong(len(buf.Bytes())))
 		if got.status == 0 {
 			fmt.Println("[golang] got status (OK):", got.status)
 		} else {
 			fmt.Println("[golang] got status (ERR):", got.status)
 		}
+		fmt.Println("[golang] got parsed instruction in:", time.Since(startedParsingAt))
 
 		parsedInstructionJSON := C.GoBytes(unsafe.Pointer(got.buf.data), C.int(got.buf.len))
 		fmt.Println("[golang] got parsed instruction as json:", spew.Sdump(parsedInstructionJSON))
