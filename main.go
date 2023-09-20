@@ -221,7 +221,7 @@ func main() {
 			panic(err)
 		}
 		demoInstruction := Parameters{
-			ProgramID: solana.MPK("11111111111111111111111111111111"),
+			ProgramID: solana.VoteProgramID,
 			Instruction: CompiledInstruction{
 				ProgramIDIndex: 2,
 				Accounts:       []uint8{1, 0},

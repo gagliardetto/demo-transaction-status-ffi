@@ -147,7 +147,7 @@ pub extern "C" fn parse_instruction(bytes: *const u8, len: usize) -> Response {
         );
         if parsed.is_err() {
             println!("[rust] parse error: {:?}", parsed);
-            let mut response = vec![];
+            let mut response = vec![0; 32];
             // add error string to response:
             let error = parsed.err().unwrap();
             let error = format!("{:?}", error);
@@ -157,24 +157,27 @@ pub extern "C" fn parse_instruction(bytes: *const u8, len: usize) -> Response {
 
             return Response {
                 buf: Buffer {
-                    data: data,
-                    len: len,
+                    data: unsafe { data.add(32) },
+                    len: len - 32,
                 },
                 status: 1,
             };
         } else {
             println!("[rust] parse success: {:?}", parsed);
             let parsed = parsed.unwrap();
-            let parsed = serde_json::to_vec(&parsed).unwrap();
+            let parsed_json = serde_json::to_vec(&parsed).unwrap();
+            let parsed_json_str = String::from_utf8(parsed_json.clone()).unwrap();
+            println!("[rust] parsed_json: {}", parsed_json_str);
 
-            let mut response = vec![];
-            response.extend_from_slice(&parsed);
+            let mut response = vec![0; 32];
+            response.extend_from_slice(&parsed_json);
+
             let data = response.as_mut_ptr();
             let len = response.len();
             return Response {
                 buf: Buffer {
-                    data: data,
-                    len: len,
+                    data: unsafe { data.add(32) },
+                    len: len - 32,
                 },
                 status: 0,
             };
