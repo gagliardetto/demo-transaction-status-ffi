@@ -210,6 +210,7 @@ func main() {
 
 	{
 		buf := new(bytes.Buffer)
+		buf.Grow(1024)
 		instructionParams := bin.NewBinEncoder(buf)
 		data, err := base58.Decode("Fk63PRyGqZAwDVvZPKBn2ZUTURZRgny7KaLrZEaea2N6u7orpV3UUGet4jCzvtuVpr1TUmDgi7AsEgQE4VjahYaZ5HtxwnoVq4SSxK65SatJYkW4AQEfT7peCRRHbEXTGPegaSRjxMYDguks8kyEHbgWfB1H3m")
 		if err != nil {
@@ -238,10 +239,12 @@ func main() {
 			StackHeight: nil,
 		}
 		spew.Dump(demoInstruction)
+		startedMarshallingParametersAt := time.Now()
 		err = demoInstruction.MarshalWithEncoder(instructionParams)
 		if err != nil {
 			panic(err)
 		}
+		fmt.Println("[golang] marshalled instruction parameters in:", time.Since(startedMarshallingParametersAt))
 		cs := (*C.u_char)(C.CBytes(buf.Bytes()))
 		defer C.free(unsafe.Pointer(cs))
 
