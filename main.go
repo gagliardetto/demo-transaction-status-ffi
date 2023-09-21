@@ -1,8 +1,5 @@
 package main
 
-// NOTE: There should be NO space between the comments and the `import "C"` line.
-// The -ldl is necessary to fix the linker errors about `dlsym` that would otherwise appear.
-
 /*
 #cgo LDFLAGS: -L./lib -lsolana_transaction_status_wrapper
 #include "./lib/transaction_status.h"
@@ -18,8 +15,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"os"
-	"path/filepath"
 	"time"
 	"unsafe"
 
@@ -271,41 +266,4 @@ func main() {
 			spew.Dump(dst)
 		}
 	}
-	// // {
-	// // 	got := C.accept_vec(cs, C.ulong(len(origin)))
-	// // 	fmt.Println("[golang] got back:", cb(got))
-	// // }
-	// {
-	// 	{
-	// 		j := `{"name":"John Smith","age":42}`
-	// 		gotJson := C.accept_json(C.CString(j))
-	// 		fmt.Println("[golang] got back json:", C.GoString(gotJson))
-	// 	}
-	// }
-}
-
-func bc(b []byte) *C.uint8_t {
-	return (*C.uint8_t)(C.CBytes(b))
-}
-
-// read back the bytes from the C-side
-func cb(p *C.uint8_t) []byte {
-	return C.GoBytes(unsafe.Pointer(p), 32)
-}
-
-func Open(regionName string, flags int, perm os.FileMode) (*os.File, error) {
-	filename := filepath.Join("/dev/shm", regionName)
-	file, err := os.OpenFile(filename, flags, perm)
-	if err != nil {
-		return nil, err
-	}
-	return file, nil
-}
-
-func Unlink(regionName string) error {
-	path := regionName
-	if !filepath.IsAbs(path) {
-		path = filepath.Join("/dev/shm", regionName)
-	}
-	return os.Remove(path)
 }
